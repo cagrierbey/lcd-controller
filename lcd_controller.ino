@@ -1,4 +1,3 @@
-//#include <Wire.h> 
 #include <LiquidCrystal_I2C.h>
 #include <Thread.h>
 
@@ -17,6 +16,10 @@ byte scrolling_direction1 = default_false;//left - right
 int scrolling_speed0 = 1000;//ms
 int scrolling_speed1 = 1000;//ms
 String space = " ";
+int ebob = 0;
+int delaycount=0;
+int row1_mod;
+int row0_mod;
 
 Thread myThread0 = Thread();
 Thread myThread1 = Thread();
@@ -89,15 +92,29 @@ void loop()
       }
       Serial.print("8 – SCROLLING SPEED (MS): ");
       Serial.println(scrolling_speed1);
-               
+      
+       take_ebob(); 
+       row0_mod= scrolling_speed0 / ebob;  
+       row1_mod= scrolling_speed1 / ebob; 
+       lcd.setCursor(0,0);
+       lcd.print(str1);   
+       lcd.setCursor(0,1);
+       lcd.print(str2);
+       lcd.setCursor(0,0); 
       while(Serial.available() == 0)
-      {
-        if(myThread0.shouldRun()){   
-          myThread0.run();
-        }
-        if(myThread1.shouldRun()){  
-          myThread1.run();
-        }
+      {   
+          
+         delay(ebob);
+        delaycount++;
+        if(delaycount% row0_mod==0){
+           rowZero();
+          }
+       if(delaycount% row1_mod==0){
+         //Serial.print(ebob);
+           rowOne();
+          }
+       
+        
       }
            
       break;
@@ -203,7 +220,7 @@ void rowZero()
         lcd.print(str1);
         if(Serial.available() == 0)
         {
-          delay(scrolling_speed0);
+          
           if(scrolling_direction0 == default_false)
           {
             csl1();
@@ -228,7 +245,7 @@ void rowOne()
         lcd.print(str2);
         if(Serial.available() == 0)
         {
-          delay(scrolling_speed1);
+          
           if(scrolling_direction1 == default_false)
           {
             csl2();
@@ -239,7 +256,7 @@ void rowOne()
           {
             csr2();
             lcd.setCursor(0,1);
-            lcd.print(str1);
+            lcd.print(str2);
           }
         }
       }
@@ -291,4 +308,13 @@ void csr2()//circular shift right for row1
     str2.setCharAt(i,str2.charAt(i-1));
   }
   str2.setCharAt(0,temp);
+}
+
+void take_ebob()
+{
+    for(int i=1; i <= scrolling_speed0 && i <= scrolling_speed1; ++i)
+    {
+        if(scrolling_speed0%i==0 && scrolling_speed1%i==0)
+            ebob = i;
+    }
 }
